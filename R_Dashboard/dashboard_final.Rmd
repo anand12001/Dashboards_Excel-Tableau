@@ -1,0 +1,141 @@
+---
+title: "ADIDAS SALES DASHBOARD"
+output: 
+  flexdashboard::flex_dashboard:
+    orientation: columns+++++
+    vertical_layout: fill
+---
+
+```{r setup, include=FALSE}
+library(flexdashboard)
+library(tidyverse)
+library(highcharter)
+library(gt)
+library(htmltools)
+library(viridis)
+library(readxl)
+library(ggplot2)
+library(maps)
+library(dplyr)
+library(plotly)
+```
+
+```{r}
+#Importing data
+df <- read_xlsx('adidas_dataset2.xlsx')
+
+```
+HOME
+======================================================================
+
+
+Column {.tabset .tabset-fade data-width=650}
+-----------------------------------------------------------------------
+
+### Retailer Sales
+
+```{r}
+# colors
+custom_colors <- viridis::mako(n=6)
+# Retailer and Total_Sales
+df %>%
+  group_by(Retailer) %>%
+  summarise(Total_Sales = sum(Total_Sales)) %>%
+  arrange(desc(Total_Sales)) %>%
+  head(15) %>%
+  hchart('column', hcaes(x = Retailer, y = Total_Sales,color = custom_colors)) %>%
+  hc_add_theme(hc_theme_google()) %>%
+  hc_tooltip(pointFormat = '<b>Retailers : </b> {point.y} <br>') %>%
+  hc_title(text = 'Retailer wise Sales ',
+           style = list(frontSize = '25px', frontWeight = 'bold')) %>%
+  hc_subtitle(text = 'Total Sales',
+              style = list(frontSize ='16px')) %>%
+  hc_credits(enabled = TRUE, text = '@miguelfzzz')
+```
+### Product & OP
+
+```{r}
+# colors
+custom_colors <- viridis::plasma(n=15)
+# Retailer and Total_Sales
+df %>%
+  arrange(desc(Operating_Profit)) %>%
+  head(15) %>%
+  hchart('bar', hcaes(x = Product, y = Operating_Profit,color = custom_colors)) %>%
+  hc_add_theme(hc_theme_google()) %>%
+  hc_tooltip(pointFormat = '<b>Products : </b> {point.y} <br>') %>%
+  hc_title(text = 'Product wise Operating Profit ',
+           style = list(frontSize = '25px', frontWeight = 'bold')) %>%
+  hc_subtitle(text = 'Operating Profit',
+              style = list(frontSize ='16px')) %>%
+  hc_credits(enabled = TRUE, text = '@miguelfzzz')
+```
+
+
+Column {data-width=350}
+-----------------------------------------------------------------------
+
+### {.no-padding}
+
+```{r}
+# colors
+custom_colors <- viridis::mako(n=3)
+df %>%
+  group_by(Sales_Method) %>%
+  summarise(count=n()) %>%
+  hchart('pie', hcaes(x = Sales_Method, y = count, color = custom_colors)) %>%
+  hc_add_theme(hc_theme_google()) %>%
+  hc_tooltip(pointFormat='<b>Proportion: </br> {point.percentage:,.2f}%') %>%
+  hc_title(text = 'Sales Methods Proportion ',
+           style = list(frontSize = '15px', frontWeight = 'bold')) %>%
+           hc_credits(enabled = TRUE, text = '@miguelfzzz')
+           
+```
+
+### {.no-padding}
+
+```{r}
+# colors
+custom_colors <- viridis::mako(n=20)
+# Retailer and Total_Sales
+df %>%
+  
+  arrange(desc(Total_Sales)) %>%
+  head(20) %>%
+  hchart('lollipop', hcaes(x = Region, y = Total_Sales,color = custom_colors)) %>%
+  hc_add_theme(hc_theme_google()) %>%
+  hc_tooltip(pointFormat = '<b>Region : </b> {point.y} <br>') %>%
+  
+  hc_title(text = 'Region wise Sales ',
+           style = list(frontSize = '25px', frontWeight = 'bold')) %>%
+  hc_subtitle(text = 'Total Sales',
+              style = list(frontSize ='16px')) %>%
+  hc_credits(enabled = TRUE, text = '@miguelfzzz')
+```
+
+Sales Map
+==============================================================================
+```{r}
+us_states <- map_data("state")
+
+# Merge sales data with state map data
+df_map <- merge(x = us_states, y = df, by.x = "region", by.y = "State", all.x = TRUE)
+
+# Create map plot with viridis color scale
+map_plot <- ggplot(df_map, aes(x = long, y = lat, group = group, fill = Total_Sales)) +
+  geom_polygon() +
+  scale_fill_viridis_c(option = "viridis", name = "Total Sales", direction = -1) +
+  labs(title = "Total Sales by State") +
+  theme_void()
+
+# Display plot
+map_plot
+```
+
+
+Summary
+==============================================================================
+```{r}
+df %>%
+  summary()
+```
